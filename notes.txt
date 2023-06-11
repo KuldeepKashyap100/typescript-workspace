@@ -1,0 +1,110 @@
+1. interface vs types:
+    - Declaration merging: Declaration merging is a feature that is exclusive to interfaces.
+        With declaration merging, we can define an interface multiple times and 
+        the TypeScript compiler will automatically merge these definitions into 
+        a single interface definition.
+        ex- interface Client { 
+                name: string; 
+            }
+
+            interface Client {
+                age: number;
+            }
+
+            const harry: Client = {
+                name: 'Harry',
+                age: 41
+            }
+    - Extends vs. intersection: An interface can extend one or multiple interfaces. 
+        By using the extends keyword, a new interface can inherit all the properties 
+        and methods of an existing interface, while also adding new properties.
+        The exception is union types. Union types allow us to describe values 
+        that can be one of several types and create unions of various primitive types, 
+        literal types, or complex types.
+        There is no equivalent to a union type in an interface. 
+        If you try to extend an interface from a union type, 
+        you’ll receive the following error:
+        ex - interface VIPClient extends Client {
+                benefits: string[]
+            }
+            type VIPClient = Client & {benefits: string[]};
+                        type Client = {
+                name: string;
+            };
+
+            interface VIPClient extends Client {
+                benefits: string[]
+            }
+            type Jobs = 'salary worker' | 'retired';
+
+            interface MoreJobs extends Jobs { // error: An interface can only extend an object type or intersection of object types With statically known members.
+                description: string; 
+            }
+
+    - Handling conflicts when extending: Another difference between types and interfaces is how conflicts 
+        are handled when you try to extend from one with the same property name.
+        ex- interface Person {
+                getPermission: () => string;
+            }
+
+            interface Staff extends Person {
+                getPermission: () => string[]; // error: Staff incorrectly extends interface Person
+            }
+
+        Type aliases handle conflicts differently. 
+        In the case of a type alias extending another type with the same property key, 
+        it will automatically merge all properties instead of throwing errors.
+        In the following example, the intersection operator merges the method 
+        signature of the two getPermission declarations, 
+        and a typeof operator is used to narrow down the union type parameter, 
+        so we can get the return value in a type-safe way:
+
+            type Person = {
+                getPermission: (id: string) => string;
+            };
+
+            type Staff = Person & {
+                getPermission: (id: string[]) => string[];
+            };
+
+            const AdminStaff: Staff = {
+                getPermission: (id: string | string[]) =>{
+                    return (typeof id === 'string'?  'admin' : ['admin']) as string[] & string;
+                }
+            }
+        In summary, interfaces will detect property or method name conflicts at compile time and generate an error, 
+        whereas type intersections will merge the properties or methods without throwing errors. 
+        Therefore, if we need to overload functions, type aliases should be used.
+
+    - Implementing classes using interfaces or type aliases:
+        both interfaces and type aliases can be used to implement a class similarly; 
+        the only difference is that we can’t implement a union type.
+        ex- type primaryKey = { key: number; } | { key: string; };
+
+            // can not implement a union type
+            class RealKey implements primaryKey {
+                key = 1
+            }
+
+    - Working with Tuple types: 
+        Tuple type allows us to express an array with a fixed number of elements, 
+        where each element has its own data type. It can be useful when you need 
+        to work with arrays of data with a fixed structure:
+        ex- 
+            type TeamMember = [name: string, role: string, age: number];
+            Interfaces don’t have direct support for tuple types. 
+        
+        workarounds: 
+            interface ITeamMember extends Array<string | number> {
+                0: string; 1: string; 2: number 
+            }
+            const peter: ITeamMember = ['Harry', 'Dev', 24];
+            
+    -   When to use types vs. interfaces:
+        Type aliases and interfaces are very similar, but have some subtle differences, as shown in the previous section.
+        In many cases, they can be used interchangeably depending on personal preference. 
+        But, we should use type aliases in the following use cases:
+            To create a new name for a primitive type
+            To define a union type, tuple type, function type, or another more complex type
+            To overload functions
+            To use mapped types, conditional types, type guard, or other advanced type features
